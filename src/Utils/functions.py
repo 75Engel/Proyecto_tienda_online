@@ -9,6 +9,10 @@ import spacy
 from nltk.stem.snowball import SnowballStemmer
 import datetime
 import os
+import sqlite3
+from datetime import datetime,date
+
+
 nlp = spacy.load('es_core_news_lg')
 
 '''Creamos las funciones necesarias para la realización de los procesos'''
@@ -153,9 +157,7 @@ def cargar_listas_desde_pickles(nombres_archivos, carpeta):
 
         # Almacena la lista en el diccionario
         listas_pickle[nombre_archivo] = lista_pickle
-        # print(listas_pickle)
-
-    # Devuelve el diccionario de listas
+        
     return listas_pickle
 
 def aplicar_funcion_a_columna(df, listas, nombre_listas, columna="DESCRIPTION"):
@@ -284,7 +286,6 @@ def spider_amantis(url,product_ingest,comment_ingest):
 
 
         '''Vamos a obtener los datos de los comentarios de los usuarios'''
-        # print("Cargando los datos de los comentarios")
 
         all_user_comments = soup_product.find_all("span", class_="name-user") 
         for user_comment in all_user_comments:
@@ -294,9 +295,7 @@ def spider_amantis(url,product_ingest,comment_ingest):
         all_dates = soup_product.find_all("span", class_="date")  
         for dates in all_dates:
             dates_text=dates.get_text(strip=True)
-            # dates=datetime.strftime(dates, '%dd/%mm/%Y')
             date_comments_product.append(dates_text)
-            # date_object = datetime.strptime(date_comments_product)
 
         all_comments = soup_product.find_all("p")
         for formats in all_comments[-len(date_comments_product):]:
@@ -390,7 +389,7 @@ def product_engineer_function (df_product,product_engineer):
     df_product.insert(loc= 3 , column= 'DESCRIPTION', value= col_3)
     df_product.insert(loc= 4 , column= 'CHARACTERISTICS', value= col_4)
     df_product=df_product.iloc[:,:6]
-    # df_product.to_csv(folder_ingest+file_product+'_'+date+ext,header=True,index=False)
+
     h=input("Quieres salvar los datos del dataframe de productos?").upper()
     if h=="SI":
         df_product.to_csv(product_engineer,header=True,index=False)          
@@ -452,6 +451,7 @@ def price_engineer_function (dataframe,price_engineer):
     date_price=datetime.datetime.today().strftime('%y/%m/%d')
     df_prices=dataframe.iloc[:,:4]
     df_prices['FECHA']=date_price
+
     h=input("Quieres salvar los datos del dataframe de precios?").upper()
     if h=="SI":
         df_prices.to_csv(price_engineer,header=True,index=False)           # Tengo que generar el path correcto
@@ -468,7 +468,6 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
     Return:
     - df_comments (pd.DataFrame): DataFrame de comentarios con ingeniería aplicada.
     - df_users (pd.DataFrame): DataFrame de usuarios que han realizado comentarios.
-
     """
 
     '''Tratando a los Usuarios'''
@@ -500,8 +499,6 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
     df_users['USERS']=dataframe['USERS']
     df_users.drop_duplicates(subset='ID_USERS', keep='first',inplace=True)
 
-
-
     print("Generando el fichero de comentarios")
     '''Tratando a las Fechas'''
 
@@ -515,6 +512,7 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
     col = df_comments.pop('ID_USERS')
     df_comments.drop(columns=['USERS'],inplace=True)
     df_comments.insert(loc= 4 , column= 'ID_USERS', value= col)
+
     h=input("Quieres salvar los datos de usuarios y comentarios?").upper()
     if h=="SI":
         df_users.to_csv(user_engineer,header=True,index=False)           # Tengo que generar el path correcto
@@ -523,3 +521,128 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
     return df_comments,df_users
 
 
+def reengineer_comment(BBDD, df_comment):
+    """Reducción del número de registros del dataframe commentarios para su ingesta en la BBDD
+    Input:
+    - BBDD (str): Base de datos utilizada.
+    - df_comment (Dataframe): Dataframe con los comentarios originales, sin filtrar
+
+    Return:
+    - df_comment_filtered (Dataframe): Dataframe con los comentarios filtrados y las fechas convertidas en Datetime.
+    """
+
+    print("Iniciando la conversión de fecha y la reducción de datos de comentarios")
+
+    ''' Conectamos con la base de datos, extraemos la fecha más reciente y la cerramos'''
+    from Utils.functions import sql_query
+ 
+    
+    conn = sqlite3.connect(BBDD)
+    cursor = conn.cursor()
+    query='''SELECT MAX(DATE) FROM COMMENT'''
+    MAX_date=sql_query(query,cursor)
+    conn.commit()
+    cursor.close()
+    conn.close()
+    fecha_maxima = MAX_date.iloc[0, 0]
+    fecha_maxima = date.fromisoformat(fecha_maxima)
+    max_date = pd.to_datetime(fecha_maxima, unit='ns')
+
+    '''Cargamos el dataframe y lo preparamos para su filtro'''
+    df_comment['DATE']=pd.to_datetime(df_comment['DATE'])
+    df_comment_filtered=df_comment[df_comment['DATE']> max_date]
+    print("El número de registros a ingresar es:",len(df_comment_filtered))
+    return df_comment_filtered
+
+def mapeo_productos(BBDD, df_product):
+    """Función para la conversión de los ID de productos
+
+   Input:
+      - BBDD (str): nombre de la BBDD.
+
+      - df_product (dataframe): Dataframe donde se encuentran los productos
+
+   Output:
+      - map_product (Dict): Diccionario con los ID mapeados coincidentes.
+       
+      - map_product_out (Dict): Diccionario con los ID mapeados no coincidentes.
+    """
+    from Utils.functions import sql_query
+
+    print("Vamos a reindexar los productos")
+
+
+    '''Llamando a la base de datos para extraer información'''
+    conn = sqlite3.connect(BBDD)
+    cursor = conn.cursor()
+    query='''SELECT ID,URL FROM PRODUCT'''
+    df_bbdd=sql_query(query,cursor)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    '''Obteniendo los ID coincidentes'''
+
+    df_products_in = pd.merge(df_bbdd, df_product, left_on="URL", right_on="LISTA_URL")
+    id_product_BBDD = df_products_in['ID_x'].tolist()
+    id_product_new = df_products_in['ID_y'].tolist()
+    map_product = {k: v for k, v in zip(id_product_BBDD, id_product_new)}
+
+    '''Obteniendo los ID NO coincidentes'''
+    max_id_product=df_bbdd['ID'].max()
+    df_product_out = pd.merge(df_bbdd, df_product, left_on="URL", right_on="LISTA_URL",how='right',suffixes=('_',''))
+    df_product_out = df_product_out[df_product_out['URL'].isnull()]
+    id_product_out = df_product_out['ID'].tolist()
+    df_product_out = df_product_out[df_product.columns]
+    df_product_out['ID'] = max_id_product + 1 + df_product_out.index
+    id_new_product = df_product_out['ID'].tolist()
+    map_product_out = {k: v for k, v in zip(id_new_product,id_product_out )}
+    map_product.update(map_product_out)
+
+    return map_product, map_product_out
+
+def mapeo_usuarios(BBDD, df_user):
+    """Función para la conversión de los ID de productos
+
+   Input:
+      - BBDD (str): nombre de la BBDD.
+
+      - df_user (dataframe): Dataframe donde se encuentran los productos
+
+   Output:
+      - map_user (Dict): Diccionario con los ID mapeados coincidentes.
+       
+      - map_user_out (Dict): Diccionario con los ID mapeados no coincidentes.
+    """
+    from Utils.functions import sql_query
+    print("Vamos a reindexar los productos")
+
+
+    '''Llamando a la base de datos para extraer información'''
+    conn = sqlite3.connect(BBDD)
+    cursor = conn.cursor()
+    query='''SELECT ID,USERS FROM USER'''
+    df_bbdd=sql_query(query,cursor)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    '''Obteniendo los ID coincidentes'''
+
+    df_users_in = pd.merge(df_bbdd, df_user, left_on="USERS", right_on="USERS")
+    id_user_BBDD = df_users_in['ID_x'].tolist()
+    id_user_new = df_users_in['ID_y'].tolist()
+    map_user = {k: v for k, v in zip(id_user_BBDD, id_user_new)}
+
+    '''Obteniendo los ID NO coincidentes'''
+    max_id_user=df_bbdd['ID'].max()
+    df_users_out = pd.merge(df_bbdd, df_user, left_on="USERS", right_on="USERS",how='right',suffixes=('_',''))
+    df_users_out = df_users_out[df_users_out['URL'].isnull()]
+    id_user_out = df_users_out['ID'].tolist()
+    df_users_out = df_users_out[df_user.columns]
+    df_users_out['ID'] = max_id_user + 1 + df_users_out.index
+    id_new_user = df_users_out['ID'].tolist()
+    map_user_out = {k: v for k, v in zip(id_new_user,id_user_out )}
+    map_user.update(map_user_out)
+
+    return map_user, map_user_out
