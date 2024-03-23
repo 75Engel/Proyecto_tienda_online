@@ -448,7 +448,7 @@ def price_engineer_function (dataframe,price_engineer):
     dataframe.insert(loc= 1 , column= 'ID_PRODUCT', value= col_3)
     dataframe.insert(loc= 2 , column= 'REGULAR_PRICE', value= col_1)
     dataframe.insert(loc= 3 , column= 'DISCOUNT_PRICE', value= col_2)
-    date_price=datetime.datetime.today().strftime('%y/%m/%d')
+    date_price=datetime.today().strftime('%y/%m/%d')
     df_prices=dataframe.iloc[:,:4]
     df_prices['FECHA']=date_price
 
@@ -646,3 +646,47 @@ def mapeo_usuarios(BBDD, df_user):
     map_user.update(map_user_out)
 
     return map_user, map_user_out
+
+def reindex (df_BBDD,df, join_left,join_right,how,ID,map):
+    '''
+    Función para reducir el numero de registros del dataframe product o users.
+
+    Input:
+    - df_BBDD (pd.DataFrame): DataFrame de base de datos.
+    - df (pd.DataFrame): DataFrame con registros a reducir.
+    - join_left (str): Nombre de la columna de dataframe_BBDD donde hacer join.
+    - join_right (str): Nombre de la columna de df donde hacer join.
+    - how (str): Tipo de join.
+    - ID (str): indice a sustituir.
+    - map (Dict): Diccionario donde están la relación de indices a sustituir 
+
+    Return:
+    - df_new (pd.DataFrame): DataFrame con registros reindexados y reducidos.
+    '''
+
+    df_new = pd.merge(df_BBDD, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
+    df_new=df_new[df_new[join_left].isnull()]
+    df_new.replace({ID:map},inplace=True)
+    return df_new
+
+def reindex_2 (df,ID,map):
+    df_new=df.replace({ID:map},inplace=True)
+    return df_new
+
+def ingesta_datos (df,BBDD,TABLE):
+
+    conn = sqlite3.connect(BBDD)
+    cursor = conn.cursor()
+
+    num= len(df.columns)
+    columnas=["?" for _ in range(num)]
+    columnas_total=", ".join(columnas)
+
+    lista_valores=df.values.tolist()
+    cursor.executemany(f"INSERT INTO {TABLE} VALUES (columntas_total)",lista_valores)
+
+    print (f"Se han ingresado los datos a la tabla {TABLE}")
+
+    conn.commit()
+    cursor.close()
+    conn.close()

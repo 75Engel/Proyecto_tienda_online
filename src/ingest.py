@@ -15,46 +15,21 @@ print("Gestionando su ingesta en la Base de Datos.\n Primero vamos a proceder a 
 
 map_product, map_product_out=mapeo_productos(BBDD, df_product)
 map_user, map_user_out=mapeo_usuarios(BBDD, df_product)
-df_comment_new=reengineer_comment(BBDD,df_comment)
+df_comment_new=reengineer_comment(BBDD,df_comments)
+df_product_new=reindex(BBDD,df_product,"URL","LISTA_URL","right","ID",map_product)
+df_users_new=reindex(BBDD,df_users,"USERS","USERS","right","ID",map_user)
 
-# df_product_new = pd.merge(df_bbdd_product, df_product,left_on="URL", right_on="LISTA_URL",how='right',suffixes=('_',''))
-# df_product_new = df_product_new[df_product_new['URL'].isnull()]
-# df_product_new.replace({'ID':map_product},inplace=True)
+#Aqui falta la función para reindexar tags
 
-# df_users_new = pd.merge(df_bbdd_user, df_users, left_on="USERS", right_on="USERS",how='right',suffixes=('_',''))
-# df_users_new = df_users_new[df_users_new['URL'].isnull()]
-# df_users_new.replace({'ID':map_user},inplace=True)
+df_prices_new=reindex_2 (df_prices,'ID',map_product)
+df_comment_new=reindex_2 (df_comment_new,'ID',map_product)
+df_comment_new=reindex_2 (df_comment_new,'ID',map_user)
 
-# df_prices_new=df_prices.replace({'ID':map_product},inplace=True)
+ingesta_datos (df_product_new,BBDD,PRODUCT)
+ingesta_datos (df_users_new,BBDD,USERS)
+ingesta_datos (df_tags_new,BBDD,TAGS)
+ingesta_datos (df_prices_new,BBDD,PRICES)
+ingesta_datos (df_comment_new,BBDD,COMMENT)
 
-# df_comment_new=reengineer_comment("Resources/online_shop.db",df_comment)
-# df_comment_new.replace({'ID_PRODUCT':map_product},inplace=True)
-# df_comment_new.replace({'ID_USERS':map_user},inplace=True)
-
-# # '''Reducimos los datos de tags y reindexamos'''
-# # df_tags_new = pd.merge(df_bbdd_product, df_tags,left_on="URL", right_on="LISTA_URL",how='right',suffixes=('_',''))
-# # df_tags_new = df_tags_new[df_tags_new['ID'].isnull()]
-# # df_tags_new.replace({'ID':map_product},inplace=True)
-
-# lista_valores_product = df_product_new.values.tolist()
-# cursor.executemany("INSERT INTO PRODUCTS VALUES (?,?,?,?,?,?)", lista_valores_product)
-
-# lista_valores_users = df_users_new.values.tolist()
-# cursor.executemany("INSERT INTO USERS VALUES (?,?)", lista_valores_users)
-
-# lista_valores_prices = df_prices_new.values.tolist()
-# cursor.executemany("INSERT INTO PRICES VALUES (?,?,?,?,?)", lista_valores_prices)
-
-# lista_valores_comments = df_comment_new.values.tolist()
-# cursor.executemany("INSERT INTO COMMENTS VALUES (?,?,?,?,?,?)", lista_valores_comments)
-
-# # lista_valores_tags = df_tags_new.values.tolist()
-# # cursor.executemany("INSERT INTO TAGS VALUES (?,?,?,?,?,?,?,?,?)", lista_valores_tags)
-
-
-
-# conn.commit()
-# cursor.close()
-# conn.close()
-
+print ("Se ha terminado el proceso de ingreso de datos.\Muchas gracias")
 
