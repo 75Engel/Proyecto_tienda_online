@@ -50,4 +50,4 @@ price_engineer=folder_ingest+file_price+'_'+date+ext
 comment_engineer=folder_ingest+file_comment+'_'+date+ext
 user_engineer=folder_ingest+file_user+'_'+date+ext
 
-DDBB="Resources/online_shop.db"
+BBDD=r".\src\Resources\online_shop.db"

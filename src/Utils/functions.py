@@ -143,12 +143,9 @@ def cargar_listas_desde_pickles(nombres_archivos, carpeta):
     for nombre_archivo in nombres_archivos:
         try:
             ruta_archivo = os.path.join(carpeta_absoluta, nombre_archivo + ".pickle")
-            # ruta_archivo = os.path.join(nombre_archivo + ".pickle")
-            # print(ruta_archivo)
         
             with open(ruta_archivo, "rb") as archivo_pickle:
                 lista_pickle = pickle.load(archivo_pickle)
-                print(lista_pickle)
         except  FileNotFoundError:
             print(f"Error: archivo no encontrado: {ruta_archivo}")
         except Exception as e:
@@ -473,7 +470,7 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
     '''Tratando a los Usuarios'''
     print("Generando el fichero de usuarios")
 
-    nombre_count = {}
+    # nombre_count = {}
     count = {}
 
     for i, row in dataframe.iterrows():
@@ -520,6 +517,8 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
 
     return df_comments,df_users
 
+
+# BBDD="src/Resources/online_shop.db"
 
 def reengineer_comment(BBDD, df_comment):
     """Reducción del número de registros del dataframe commentarios para su ingesta en la BBDD
@@ -602,7 +601,7 @@ def mapeo_productos(BBDD, df_product):
     return map_product, map_product_out
 
 def mapeo_usuarios(BBDD, df_user):
-    """Función para la conversión de los ID de productos
+   '''Función para la conversión de los ID de productos
 
    Input:
       - BBDD (str): nombre de la BBDD.
@@ -613,46 +612,48 @@ def mapeo_usuarios(BBDD, df_user):
       - map_user (Dict): Diccionario con los ID mapeados coincidentes.
        
       - map_user_out (Dict): Diccionario con los ID mapeados no coincidentes.
-    """
-    from Utils.functions import sql_query
-    print("Vamos a reindexar los productos")
+   '''
 
+   print("Vamos a reindexar los usuarios")
 
-    '''Llamando a la base de datos para extraer información'''
-    conn = sqlite3.connect(BBDD)
-    cursor = conn.cursor()
-    query='''SELECT ID,USERS FROM USER'''
-    df_bbdd=sql_query(query,cursor)
-    conn.commit()
-    cursor.close()
-    conn.close()
+   from Utils.functions import sql_query
 
-    '''Obteniendo los ID coincidentes'''
+   '''Llamando a la base de datos para extraer información'''
+   conn = sqlite3.connect(BBDD)
+   cursor = conn.cursor()
+   query='''SELECT ID,USERS FROM USERS'''
+   df_bbdd=sql_query(query,cursor)
+   conn.commit()
+   cursor.close()
+   conn.close()
 
-    df_users_in = pd.merge(df_bbdd, df_user, left_on="USERS", right_on="USERS")
-    id_user_BBDD = df_users_in['ID_x'].tolist()
-    id_user_new = df_users_in['ID_y'].tolist()
-    map_user = {k: v for k, v in zip(id_user_BBDD, id_user_new)}
+   '''Obteniendo los ID coincidentes'''
 
-    '''Obteniendo los ID NO coincidentes'''
-    max_id_user=df_bbdd['ID'].max()
-    df_users_out = pd.merge(df_bbdd, df_user, left_on="USERS", right_on="USERS",how='right',suffixes=('_',''))
-    df_users_out = df_users_out[df_users_out['URL'].isnull()]
-    id_user_out = df_users_out['ID'].tolist()
-    df_users_out = df_users_out[df_user.columns]
-    df_users_out['ID'] = max_id_user + 1 + df_users_out.index
-    id_new_user = df_users_out['ID'].tolist()
-    map_user_out = {k: v for k, v in zip(id_new_user,id_user_out )}
-    map_user.update(map_user_out)
+   df_users_in = pd.merge(df_bbdd, df_user, left_on="USERS", right_on="USERS")
+   id_user_BBDD = df_users_in['ID'].tolist()
+   id_user_new = df_users_in['ID_USERS'].tolist()
+   map_user = {k: v for k, v in zip(id_user_BBDD, id_user_new)}
 
-    return map_user, map_user_out
+   '''Obteniendo los ID NO coincidentes'''
+   max_id_user=df_bbdd['ID'].max()
+   df_users_out = pd.merge(df_bbdd, df_user, left_on="USERS", right_on="USERS",how='right',suffixes=('_',''))
+   df_users_out = df_users_out[df_users_out['ID'].isnull()]
+   id_user_out = df_users_out['ID_USERS'].tolist()
+   df_users_out = df_users_out[df_user.columns]
+   df_users_out['ID'] = max_id_user + 1 + df_users_out.index
+   id_new_user = df_users_out['ID'].tolist()
+   map_user_out = {k: v for k, v in zip(id_new_user,id_user_out )}
+   map_user.update(map_user_out)
 
-def reindex (df_BBDD,df, join_left,join_right,how,ID,map):
+   return map_user, map_user_out
+
+def reindex (BBDD,FIELD,df, join_left,join_right,how,ID,map):              # Vamos a probar con outer
     '''
     Función para reducir el numero de registros del dataframe product o users.
 
     Input:
-    - df_BBDD (pd.DataFrame): DataFrame de base de datos.
+    - BBDD (str): Dirección de la base de datos.
+    - FIELD (str): Nombre de la tabla de la base de datos.
     - df (pd.DataFrame): DataFrame con registros a reducir.
     - join_left (str): Nombre de la columna de dataframe_BBDD donde hacer join.
     - join_right (str): Nombre de la columna de df donde hacer join.
@@ -664,16 +665,70 @@ def reindex (df_BBDD,df, join_left,join_right,how,ID,map):
     - df_new (pd.DataFrame): DataFrame con registros reindexados y reducidos.
     '''
 
-    df_new = pd.merge(df_BBDD, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
+    from Utils.functions import sql_query
+
+    '''Llamando a la base de datos para extraer información'''
+    conn = sqlite3.connect(BBDD)
+    cursor = conn.cursor()
+    query=f"SELECT * FROM {FIELD}"
+    df_bbdd=sql_query(query,cursor)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    '''Realizando el JOIN de los dataframes'''
+    df_new = pd.merge(df_bbdd, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
     df_new=df_new[df_new[join_left].isnull()]
     df_new.replace({ID:map},inplace=True)
     return df_new
 
-def reindex_2 (df,ID,map):
-    df_new=df.replace({ID:map},inplace=True)
+
+def reindex_2 (BBDD,FIELD,df, join_left,join_right,how,ID,map,list):
+    '''
+    Función para reducir el numero de registros del dataframe tags.
+
+    Input:
+    - BBDD (str): Dirección de la base de datos.
+    - FIELD (str): Nombre de la tabla de la base de datos.
+    - df (pd.DataFrame): DataFrame con registros a reducir.
+    - join_left (str): Nombre de la columna de dataframe_BBDD donde hacer join.
+    - join_right (str): Nombre de la columna de df donde hacer join.
+    - how (str): Tipo de join.
+    - ID (str): indice a sustituir.
+    - map (Dict): Diccionario donde están la relación de indices a sustituir 
+    - list (list): Lista con los nombres de las columnas a permanecer.
+
+    Return:
+    - df_new (pd.DataFrame): DataFrame con registros reindexados y reducidos.
+    '''
+    from Utils.functions import sql_query
+
+    '''Llamando a la base de datos para extraer información'''
+    conn = sqlite3.connect(BBDD)
+    cursor = conn.cursor()
+    query=f"SELECT * FROM {FIELD}"
+    df_bbdd=sql_query(query,cursor)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    '''Realizando el JOIN de los dataframes'''
+    df_new = pd.merge(df_bbdd, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
+    df_new=df_new[df_new[join_left].isnull()]
+    df_new.replace({ID:map},inplace=True)
+    df_new=df_new[list]
     return df_new
 
 def ingesta_datos (df,BBDD,TABLE):
+    '''
+    Función para la incorporación de los nuevos datos en una base de datos.
+    Es una formula general que es independiente del numero de campos que tenga la BBDD.
+    Input:
+    - df (pd.DataFrame): DataFrame con registros a incluir.
+    - BBDD (str): path y nombre completo de la Base de Datos.
+    - TABLE (str): Nombre de la TABLA dentro de la Base de Datos.
+    '''
+    # from Utils.functions import sql_query
 
     conn = sqlite3.connect(BBDD)
     cursor = conn.cursor()
