@@ -647,7 +647,7 @@ def mapeo_usuarios(BBDD, df_user):
 
    return map_user, map_user_out
 
-def reindex (BBDD,FIELD,df, join_left,join_right,how,ID,map):              # Vamos a probar con outer
+def reindex (BBDD,FIELD,df, join_left,join_right,how,ID):              # Vamos a probar con outer
     '''
     Función para reducir el numero de registros del dataframe product o users.
 
@@ -658,8 +658,6 @@ def reindex (BBDD,FIELD,df, join_left,join_right,how,ID,map):              # Vam
     - join_left (str): Nombre de la columna de dataframe_BBDD donde hacer join.
     - join_right (str): Nombre de la columna de df donde hacer join.
     - how (str): Tipo de join.
-    - ID (str): indice a sustituir.
-    - map (Dict): Diccionario donde están la relación de indices a sustituir 
 
     Return:
     - df_new (pd.DataFrame): DataFrame con registros reindexados y reducidos.
@@ -678,12 +676,15 @@ def reindex (BBDD,FIELD,df, join_left,join_right,how,ID,map):              # Vam
 
     '''Realizando el JOIN de los dataframes'''
     df_new = pd.merge(df_bbdd, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
-    df_new=df_new[df_new[join_left].isnull()]
-    df_new.replace({ID:map},inplace=True)
+    df_new=df_new[df_new[ID].isna()]
+    df_new=df_new.iloc[:,-len(df.columns):]
+    # colums=df.columns()
+    # df_new=df_new[[colums]]
+
     return df_new
 
 
-def reindex_2 (BBDD,FIELD,df, join_left,join_right,how,ID,map,list):
+def reindex_2 (BBDD,FIELD,df, join_left,join_right,how,ID,list):
     '''
     Función para reducir el numero de registros del dataframe tags.
 
@@ -695,7 +696,6 @@ def reindex_2 (BBDD,FIELD,df, join_left,join_right,how,ID,map,list):
     - join_right (str): Nombre de la columna de df donde hacer join.
     - how (str): Tipo de join.
     - ID (str): indice a sustituir.
-    - map (Dict): Diccionario donde están la relación de indices a sustituir 
     - list (list): Lista con los nombres de las columnas a permanecer.
 
     Return:
@@ -714,10 +714,10 @@ def reindex_2 (BBDD,FIELD,df, join_left,join_right,how,ID,map,list):
 
     '''Realizando el JOIN de los dataframes'''
     df_new = pd.merge(df_bbdd, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
-    df_new=df_new[df_new[join_left].isnull()]
-    df_new.replace({ID:map},inplace=True)
-    df_new=df_new[list]
-    return df_new
+    # df_new=df_new[df_new[ID].isnull()]
+    # df_new.replace({ID:map},inplace=True)
+    # df_new=df_new[list]
+    return df_new,df_bbdd
 
 def ingesta_datos (df,BBDD,TABLE):
     '''

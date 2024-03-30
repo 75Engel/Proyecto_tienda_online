@@ -40,7 +40,7 @@ dm_mapping={
     'diciembre':12,
 } 
 
-nombre_listas=['amenities','anal','BDSM','femenino','masculino','juguetes','lenceria','muebles']
+nombre_listas=['ID','amenities','anal','BDSM','femenino','masculino','juguetes','lenceria','muebles']
 
 product_ingest=folder_ingest+file_ingest_product+'_'+date+ext
 comment_ingest=folder_ingest+file_ingest_comment+'_'+date+ext
