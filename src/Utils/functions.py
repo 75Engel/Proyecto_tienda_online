@@ -538,20 +538,59 @@ def reengineer_comment(BBDD, df_comment):
     
     conn = sqlite3.connect(BBDD)
     cursor = conn.cursor()
-    query='''SELECT MAX(DATE) FROM COMMENT'''
-    MAX_date=sql_query(query,cursor)
+    query_DATE='''SELECT MAX(DATE) FROM COMMENT'''
+    query_ID='''SELECT MAX(ID_COMMENT) FROM COMMENT'''
+    MAX_date=sql_query(query_DATE,cursor)
+    MAX_ID=sql_query(query_ID,cursor)
     conn.commit()
     cursor.close()
     conn.close()
+    
+    '''Obtenemos los valores máximos de fecha y de ID_COMMENT'''
     fecha_maxima = MAX_date.iloc[0, 0]
     fecha_maxima = date.fromisoformat(fecha_maxima)
     max_date = pd.to_datetime(fecha_maxima, unit='ns')
+    ID_MAX = MAX_ID.iloc[0, 0]
+
 
     '''Cargamos el dataframe y lo preparamos para su filtro'''
     df_comment['DATE']=pd.to_datetime(df_comment['DATE'])
     df_comment_filtered=df_comment[df_comment['DATE']> max_date]
-    print("El número de registros a ingresar es:",len(df_comment_filtered))
+    df_comment_filtered['DATE'] = df_comment_filtered['DATE'].apply(lambda x: x.strftime('%Y-%m-%d'))    
+    df_comment_filtered['Unnamed: 0']=df_comment_filtered['Unnamed: 0']+ID_MAX+1
+    print("El número de comentarios a ingresar es:",len(df_comment_filtered))
+
     return df_comment_filtered
+
+def reengineer_price(BBDD, df_price):
+    """Reindenxación de los ID del dataframe de PRICES aumentandolo en relación con el valor máximo que había en la Base de Datos.
+    Input:
+    - BBDD (str): Base de datos utilizada.
+    - df_price (Dataframe): Dataframe con los precios originales
+
+    Return:
+    - df (Dataframe): Dataframe con los ID aumentados.
+    """
+
+    # print("Iniciando la conversión de fecha y la reducción de datos de comentarios")
+
+    ''' Conectamos con la base de datos, extraemos la fecha más reciente y la cerramos'''
+    from Utils.functions import sql_query
+ 
+    
+    conn = sqlite3.connect(BBDD)
+    cursor = conn.cursor()
+    query='''SELECT MAX(ID) FROM PRICES'''
+    MAX_ID=sql_query(query,cursor)
+    conn.commit()
+    cursor.close()
+    conn.close()
+    ID_MAX = MAX_ID.iloc[0, 0]
+
+    '''Cargamos el dataframe y lo preparamos para su filtro'''
+    df_price['ID']=df_price['ID']+ID_MAX+1
+
+    return df_price
 
 def mapeo_productos(BBDD, df_product):
     """Función para la conversión de los ID de productos
@@ -585,7 +624,7 @@ def mapeo_productos(BBDD, df_product):
     df_products_in = pd.merge(df_bbdd, df_product, left_on="URL", right_on="LISTA_URL")
     id_product_BBDD = df_products_in['ID_x'].tolist()
     id_product_new = df_products_in['ID_y'].tolist()
-    map_product = {k: v for k, v in zip(id_product_BBDD, id_product_new)}
+    map_product = {k: v for k, v in zip(id_product_new,id_product_BBDD )}
 
     '''Obteniendo los ID NO coincidentes'''
     max_id_product=df_bbdd['ID'].max()
@@ -595,7 +634,7 @@ def mapeo_productos(BBDD, df_product):
     df_product_out = df_product_out[df_product.columns]
     df_product_out['ID'] = max_id_product + 1 + df_product_out.index
     id_new_product = df_product_out['ID'].tolist()
-    map_product_out = {k: v for k, v in zip(id_new_product,id_product_out )}
+    map_product_out = {k: v for k, v in zip(id_product_out,id_new_product )}
     map_product.update(map_product_out)
 
     return map_product, map_product_out
@@ -632,7 +671,7 @@ def mapeo_usuarios(BBDD, df_user):
    df_users_in = pd.merge(df_bbdd, df_user, left_on="USERS", right_on="USERS")
    id_user_BBDD = df_users_in['ID'].tolist()
    id_user_new = df_users_in['ID_USERS'].tolist()
-   map_user = {k: v for k, v in zip(id_user_BBDD, id_user_new)}
+   map_user = {k: v for k, v in zip(id_user_new,id_user_BBDD)}
 
    '''Obteniendo los ID NO coincidentes'''
    max_id_user=df_bbdd['ID'].max()
@@ -642,10 +681,11 @@ def mapeo_usuarios(BBDD, df_user):
    df_users_out = df_users_out[df_user.columns]
    df_users_out['ID'] = max_id_user + 1 + df_users_out.index
    id_new_user = df_users_out['ID'].tolist()
-   map_user_out = {k: v for k, v in zip(id_new_user,id_user_out )}
+   map_user_out = {k: v for k, v in zip(id_user_out,id_new_user )}
    map_user.update(map_user_out)
 
    return map_user, map_user_out
+
 
 def reindex (BBDD,FIELD,df, join_left,join_right,how,ID):              # Vamos a probar con outer
     '''
@@ -678,46 +718,9 @@ def reindex (BBDD,FIELD,df, join_left,join_right,how,ID):              # Vamos a
     df_new = pd.merge(df_bbdd, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
     df_new=df_new[df_new[ID].isna()]
     df_new=df_new.iloc[:,-len(df.columns):]
-    # colums=df.columns()
-    # df_new=df_new[[colums]]
+    print(f"Los datos a cargar en {FIELD} son {len(df_new)} registros")
 
     return df_new
-
-
-def reindex_2 (BBDD,FIELD,df, join_left,join_right,how,ID,list):
-    '''
-    Función para reducir el numero de registros del dataframe tags.
-
-    Input:
-    - BBDD (str): Dirección de la base de datos.
-    - FIELD (str): Nombre de la tabla de la base de datos.
-    - df (pd.DataFrame): DataFrame con registros a reducir.
-    - join_left (str): Nombre de la columna de dataframe_BBDD donde hacer join.
-    - join_right (str): Nombre de la columna de df donde hacer join.
-    - how (str): Tipo de join.
-    - ID (str): indice a sustituir.
-    - list (list): Lista con los nombres de las columnas a permanecer.
-
-    Return:
-    - df_new (pd.DataFrame): DataFrame con registros reindexados y reducidos.
-    '''
-    from Utils.functions import sql_query
-
-    '''Llamando a la base de datos para extraer información'''
-    conn = sqlite3.connect(BBDD)
-    cursor = conn.cursor()
-    query=f"SELECT * FROM {FIELD}"
-    df_bbdd=sql_query(query,cursor)
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    '''Realizando el JOIN de los dataframes'''
-    df_new = pd.merge(df_bbdd, df,left_on=join_left, right_on=join_right,how=how,suffixes=('_',''))
-    # df_new=df_new[df_new[ID].isnull()]
-    # df_new.replace({ID:map},inplace=True)
-    # df_new=df_new[list]
-    return df_new,df_bbdd
 
 def ingesta_datos (df,BBDD,TABLE):
     '''
@@ -738,7 +741,7 @@ def ingesta_datos (df,BBDD,TABLE):
     columnas_total=", ".join(columnas)
 
     lista_valores=df.values.tolist()
-    cursor.executemany(f"INSERT INTO {TABLE} VALUES (columntas_total)",lista_valores)
+    cursor.executemany(f"INSERT INTO {TABLE} VALUES ({columnas_total})",lista_valores)
 
     print (f"Se han ingresado los datos a la tabla {TABLE}")
 
