@@ -1,4 +1,4 @@
-'''Importamos los modulos necesarios para que las funciones funcionen'''
+'''Importamos las librerías necesarias para que las funciones funcionen'''
 import pandas as pd
 import numpy as np
 import pickle
@@ -15,11 +15,20 @@ from datetime import datetime,date
 
 nlp = spacy.load('es_core_news_lg')
 
-'''Creamos las funciones necesarias para la realización de los procesos'''
+''' Funciones Auxiliares'''
+
+'''Función para el tratamiento de los datos de la BBDD'''
 
 def sql_query(query,cursor):
-    ''''
-    Generación de dataframe a partir de una base de datos
+    '''
+    Función que genera un dataframe a partir de una orden a la base de datos.
+
+    - Inputs:
+        - query (str):          Query realizada a la base de datos.
+        - cursor (cursor):      Cursor de conexión a la base de datos.
+
+    - Outputs:
+        - Dataframe (Dataframe): Dataframe de la query requerida.
     '''
 
     # Ejecuta la query
@@ -33,22 +42,21 @@ def sql_query(query,cursor):
 
     return pd.DataFrame(ans,columns=names)
 
+'''Funciones para el tratamiento de textos'''
 
-def extraer_lemas(texto):
+def extraer_lemas(text):
     '''
     Función que recibe un texto como entrada y devuelve una lista de los lemas de las palabras que se encuentran en el texto. 
     
     La lista de lemas resultante solo contiene las palabras que son alfabéticas, es decir, que no contienen caracteres numéricos o especiales.
 
     - Inputs:
-
-        texto (str): Texto del cual se quieren extraer los lemas.
+        - text (str):           Texto del cual se quieren extraer los lemas.
 
     - Outputs:
-
-        lemas (list): Lista de los lemas de las palabras alfabéticas que se encuentran en el texto.
+        - lemas (list):         Lista de los lemas de las palabras alfabéticas que se encuentran en el texto.
     '''
-    doc = nlp(texto)
+    doc = nlp(text)
     lemas = [token.lemma_ for token in doc if token.is_alpha]
     return lemas
 
@@ -59,18 +67,16 @@ def eliminacion_acentos(text):
     Para esto, se utiliza una expresión regular y un diccionario con los caracteres a reemplazar.
 
     - Inputs:
-
-       text (str): Texto del cual se quieren eliminar los acentos.
+       - text (str):            Texto del cual se quieren eliminar los acentos.
 
     - Outputs:
-
-        texto (str): Texto sin los caracteres acentuados.
-         '''
+        - text (str):           Texto sin los caracteres acentuados.
+    '''
     pattern = '[áéíóúÁÉÍÓÚ]'
     replace = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U'}
     return re.sub(pattern, lambda match: replace[match.group()], text)
 
-def spanish_stemmer(x):
+def spanish_stemmer(text):
     '''
     Función que recibe una cadena de texto como entrada y devuelve el texto procesado con un algoritmo de stemming en español. 
     
@@ -79,65 +85,76 @@ def spanish_stemmer(x):
     En este caso, se utiliza el algoritmo SnowballStemmer de la librería NLTK.
 
     - Inputs:
-
-        x (str): Texto que se quiere procesar con el algoritmo de stemming.
+        - text (str):           Texto que se quiere procesar con el algoritmo de stemming.
 
     - Outputs:
-
-        str: Texto procesado con el algoritmo de stemming.
+        - str:                  Texto procesado con el algoritmo de stemming.
         '''
     stemmer = SnowballStemmer('spanish')
-    return " ".join([stemmer.stem(word) for word in x.split()])
+    return " ".join([stemmer.stem(word) for word in text.split()])
 
-def pickled_list(lista,nombre_archivo, carpeta="Utils"):
-    '''Generar fichero pickle a partir de una lista de tareas. 
+def pickled_list(list,nombre_archivo, carpeta="Utils"):
+    '''
+    Función que genera un fichero pickle a partir de una lista de tareas. 
+
+    Los ficheros se guardan en la carpeta Utils, por defecto.
     
-    Los ficheros se guardan en la carpeta Utils.
-    
-    - INPUT: 
-        - lista (list):         Nombre de la lista a guardar.
+    - Inputs: 
+        - list (list):          Nombre de la lista a guardar.
+        - nombre_archivo (str): Nombre del fichero a generar.
+        - carpeta (str):        Carpeta donde se va a guardar el fichero .pickle.
 
-        - nombre_archivo (str): Nombre del fichero a generar
-
-        - carpeta: Carpeta donde se va a guardar el fichero .pickle
-
-    - OUTPUT: 
-        - lista (.pickle): fichero .pickle donde esta almacenada la información de la lista.
+    - Outputs: 
+        - list (.pickle):       Fichero .pickle donde esta almacenada la información de la lista.
 
     '''
     ruta_archivo = os.path.join(carpeta, nombre_archivo + ".pickle")
 
     with open(ruta_archivo, "wb") as archivo_pickle:
-            pickle.dump(lista, archivo_pickle)
-    return lista
+            pickle.dump(list, archivo_pickle)
+    return list
 
 
-def unpickled_list(lista,nombre_archivo, carpeta="Utils"):
-    '''Generar lista de tareas que existen en la carpeta Utils.
+def unpickled_list(list,nombre_archivo, carpeta="Utils"):
+    '''
+    Función que genera extrae una lista de tareas a partir de un fichero .pickle.
+     
+    El fichero .pickle está por defecto en la carpeta Utils.
     
     Definir tareas nuevas a agregar dentro de la lista en el caso de haber una nueva tarea a añadir.
     
-    - INPUT: 
-        - lista (list):         Nombre de la lista a guardar.
-
-        - nombre_archivo (str): Nombre del fichero a generar
-
-        - carpeta:              Carpeta donde se va a guardar el fichero .pickle
+    - Inputs: 
+        - list (list):          Nombre de la lista a guardar.
+        - nombre_archivo (str): Nombre del fichero a generar.
+        - carpeta (str):        Carpeta donde se va a guardar el fichero .pickle.
     
-    - OUTPUT: 
-        - lista (list):         Lista de productos
+    - Outputs: 
+        - list (list):          Lista de productos.
     '''
     
     ruta_archivo = os.path.join(carpeta, nombre_archivo + ".pickle")
     with open(ruta_archivo, "rb") as archivo_pickle:
-        lista = pickle.load(archivo_pickle)
+        list = pickle.load(archivo_pickle)
 
-    return lista
+    return list
 
 
 def cargar_listas_desde_pickles(nombres_archivos, carpeta):
+    '''
+    Función que genera un diccionario a partir de los datos existentes en ficheros .pickles.
+    
+    Los ficheros .pickles son listas.
+        
+    - Inputs: 
+        - nombres_archivos (list):  Lista de ficheros .pickle.
+        - carpeta (str):            Carpeta donde se encuentran los ficheros .pickle.
+    
+    - Outputs: 
+        - Dict_pickle (list):       Diccionario de listas.
+    '''
+
     carpeta_absoluta=os.path.abspath(carpeta)
-    listas_pickle = {}
+    Dict_pickle = {}
     lista_pickle=None
     
     for nombre_archivo in nombres_archivos:
@@ -153,21 +170,28 @@ def cargar_listas_desde_pickles(nombres_archivos, carpeta):
             continue
 
         # Almacena la lista en el diccionario
-        listas_pickle[nombre_archivo] = lista_pickle
+        Dict_pickle[nombre_archivo] = lista_pickle
         
-    return listas_pickle
+    return Dict_pickle
 
-def aplicar_funcion_a_columna(df, listas, nombre_listas, columna="DESCRIPTION"):
+def aplicar_funcion_a_columna(df, Dict_pickle, nombre_listas, columna="DESCRIPTION"):
     '''
-    Función que aplica la función extraer lemas a la columna DESCRIPTION
-    La función tiene como parametros de entrada:
-    Dataframe
-    Diccionario con las listas a tratar
-    Columna sobre la que realizar la separación.
+    Función que genera columnas en un dataframe en función de la presencia de determinados lemas en una columna específica de un Dataframe.
+
+    Por defecto, la columna es DESCRIPTION.
+
+    - Inputs: 
+        - df (Dataframe):       Dataframe a tratar.
+        - Dict_pickle (dict):   Diccionario con listas
+        - nombre_listas (list): Lista proveniente del Diccionario Dict.
+        - columna (str):        Columna del dataframe a tratar.
+    
+    - Outputs: 
+        - df (Dataframe):       Dataframe tratado.
     '''
 
     # Carga la lista desde el diccionario
-    lista = listas[nombre_listas]
+    lista = Dict_pickle[nombre_listas]
 
     # Aplica la función a la columna del DataFrame
     df[nombre_listas] = df[columna].apply(lambda x: any(lematizado in lista for lematizado in extraer_lemas(x)))
@@ -175,24 +199,24 @@ def aplicar_funcion_a_columna(df, listas, nombre_listas, columna="DESCRIPTION"):
     return df
 
 
-'''Creamos las funciones de los scripts'''
+'''Funciones para la creación del script'''
 
 def spider_amantis(url,product_ingest,comment_ingest):
-    """
-    Obtiene las URLs de los productos para luego extraer la información de cada producto.
+    '''
+    Función que obtiene las URLs de los productos para luego extraer la información de cada producto.
 
-    Input:
-    - url (str): URL base para la extracción de productos.
-    - product_ingest (str): Nombre de fichero de productos.
-    - comment_ingest (str): Nombre de fichero de comentarios.
+    - Inputs:
+        - url (str):            URL base para la extracción de productos.
+        - product_ingest (str): Nombre de fichero .csv de productos.
+        - comment_ingest (str): Nombre de fichero .csv de comentarios.
 
-
-    Return:
-    - noduplicated_product (pd.DataFrame): DataFrame de productos sin duplicados.
-    - noduplicated_comments (pd.DataFrame): DataFrame de comentarios sin duplicados.
-    """
+    - Outputs:
+        - noduplicated_product (Dataframe):     DataFrame de productos sin duplicados.
+        - noduplicated_comments (Dataframe):    DataFrame de comentarios sin duplicados.
+    '''
     
     pages= np.arange(1,25)  
+
     '''Listas a generar con la información de los productos'''
     lista_URLs = []
     name=[]
@@ -351,16 +375,16 @@ def spider_amantis(url,product_ingest,comment_ingest):
     return noduplicated_product,noduplicated_comments
 
 def product_engineer_function (df_product,product_engineer):
-    """
-    Realiza ingeniería de datos para la creación de la tabla de productos.
+    '''
+    Función que realiza la ingeniería de datos para la creación de la tabla de productos.
 
-    Input:
-    - df_product (pd.DataFrame): DataFrame de productos.
-    - product_engineer (str): Nombre de fichero generado.
+    - Inputs:
+        - df_product (Dataframe):       DataFrame de productos.
+        - product_engineer (str):       Nombre de fichero .csv generado.
 
-    Return:
-    - df_product (pd.DataFrame): DataFrame de productos con ingeniería aplicada.
-    """
+    - Outputs:
+        - df_product (Dataframe):       DataFrame de productos con ingeniería aplicada.
+    '''
     
     print("Generando el fichero de productos")
    
@@ -394,18 +418,18 @@ def product_engineer_function (df_product,product_engineer):
     return df_product
 
 def tag_engineer_function (df_tag,nombre_listas,tag_engineer):
-    """
-    Realiza ingeniería de datos para la creación de la tabla de tags.
+    '''
+    Función que realiza laingeniería de datos para la creación de la tabla de tags.
 
-    Input:
-    - df_tag (pd.DataFrame): DataFrame de productos.
-    - nombre_lista (Lista): Lista de nombres utilizada para cargar listas desde pickles.
-    - tag_engineer (str): Nombre de fichero generado.
+    - Inputs:
+        - df_tag (Dataframe):       DataFrame de productos.
+        - nombre_lista (list):      Lista de nombres utilizada para cargar listas desde pickles.
+        - tag_engineer (str):       Nombre de fichero .csv generado.
 
+    - Outputs:
+        - df_tag (Dataframe):       DataFrame de tags de los diversos productos.
+    '''
 
-    Return:
-    - df_tag (pd.DataFrame): DataFrame de tags de los diversos productos.
-    """
     from Utils.functions import eliminacion_acentos,cargar_listas_desde_pickles,aplicar_funcion_a_columna
     print("Generando el fichero de tags")
     df_tag['SLOGAN'] = df_tag['SLOGAN'].str.lower()
@@ -417,9 +441,6 @@ def tag_engineer_function (df_tag,nombre_listas,tag_engineer):
     for nombre_lista in listas:
         df_tag = aplicar_funcion_a_columna(df_tag, listas,nombre_lista)
 
-    # Queda pendiente eliminar las columnas que no son necesarias
-        
-        
     h=input("Quieres salvar los datos del dataframe de tags?").upper()
     if h=="SI":
         df_tag.to_csv(tag_engineer,header=True,index=False)           # Tengo que generar el path correcto
@@ -427,16 +448,16 @@ def tag_engineer_function (df_tag,nombre_listas,tag_engineer):
     return df_tag
 
 def price_engineer_function (dataframe,price_engineer):
-    """
-    Realiza ingeniería de datos para la creación de la tabla de precios.
+    '''
+    Función que realiza la ingeniería de datos para la creación de la tabla de precios.
 
-    Input:
-    - dataframe (pd.DataFrame): DataFrame de productos.
-    - price_engineer (str): Nombre de fichero generado.
+    - Inputs:
+        - dataframe (Dataframe):    DataFrame de productos.
+        - price_engineer (str):     Nombre de fichero .csv generado.
 
-    Return:
-    - df_prices (pd.DataFrame): DataFrame de precios de los productos.
-    """
+    - Outputs:
+        - df_prices (Dataframe):    DataFrame de precios de los productos.
+    '''
 
     print("Generando el fichero de precios")
     col_1 = dataframe.pop('REGULAR_PRICE')
@@ -455,22 +476,23 @@ def price_engineer_function (dataframe,price_engineer):
     return df_prices
 
 def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engineer):
-    """
-    Realiza ingeniería de datos para la creación de la tabla de comentarios.
+    '''
+    Función que realiza la ingeniería de datos para la creación de la tabla de comentarios.
 
-    Input:
-    - dataframe (pd.DataFrame): DataFrame de comentarios.
-    - dm_mapping (dict): Mapeo de meses para el tratamiento de fechas.
+    - Inputs:
+        - dataframe (Dataframe):    DataFrame de comentarios.
+        - dm_mapping (dict):        Diccionario para realizar mapeo de meses.
+        - comment_engineer (str):   Nombre de fichero .csv generado.
+        - user_engineer (str):      Nombre de fichero .csv generado.
 
-    Return:
-    - df_comments (pd.DataFrame): DataFrame de comentarios con ingeniería aplicada.
-    - df_users (pd.DataFrame): DataFrame de usuarios que han realizado comentarios.
-    """
+    - Outputs:
+        - df_comments (Dataframe):  DataFrame de comentarios con ingeniería aplicada.
+        - df_users (Dataframe):     DataFrame de usuarios que han realizado comentarios.
+    '''
 
     '''Tratando a los Usuarios'''
     print("Generando el fichero de usuarios")
 
-    # nombre_count = {}
     count = {}
 
     for i, row in dataframe.iterrows():
@@ -486,6 +508,7 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
             dataframe.loc[i, 'USERS'] = nueva_nombre
         else:
             count[id][nombre] = 1
+
     lista_users=dataframe['USERS'].unique()
     mivalor = [ x for x in range(len(lista_users))]             
     lista_users=list(lista_users)                                
@@ -517,25 +540,23 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
 
     return df_comments,df_users
 
-
-# BBDD="src/Resources/online_shop.db"
-
 def reengineer_comment(BBDD, df_comment):
-    """Reducción del número de registros del dataframe commentarios para su ingesta en la BBDD
-    Input:
-    - BBDD (str): Base de datos utilizada.
-    - df_comment (Dataframe): Dataframe con los comentarios originales, sin filtrar
+    '''
+    Función para la reducción del número de registros del dataframe commentarios para incorporar a la BBDD.
 
-    Return:
-    - df_comment_filtered (Dataframe): Dataframe con los comentarios filtrados y las fechas convertidas en Datetime.
-    """
+    - Inputs:
+        - BBDD (str):                       Base de datos utilizada.
+        - df_comment (Dataframe):           Dataframe con los comentarios originales, sin filtrar.
+
+    - Outputs:
+        - df_comment_filtered (Dataframe): Dataframe con los comentarios filtrados.
+    '''
 
     print("Iniciando la conversión de fecha y la reducción de datos de comentarios")
 
     ''' Conectamos con la base de datos, extraemos la fecha más reciente y la cerramos'''
     from Utils.functions import sql_query
- 
-    
+
     conn = sqlite3.connect(BBDD)
     cursor = conn.cursor()
     query_DATE='''SELECT MAX(DATE) FROM COMMENT'''
@@ -552,31 +573,29 @@ def reengineer_comment(BBDD, df_comment):
     max_date = pd.to_datetime(fecha_maxima, unit='ns')
     ID_MAX = MAX_ID.iloc[0, 0]
 
-
     '''Cargamos el dataframe y lo preparamos para su filtro'''
     df_comment['DATE']=pd.to_datetime(df_comment['DATE'])
     df_comment_filtered=df_comment[df_comment['DATE']> max_date]
-    df_comment_filtered['DATE'] = df_comment_filtered['DATE'].apply(lambda x: x.strftime('%Y-%m-%d'))    
+    df_comment_filtered['DATE'] = df_comment_filtered['DATE'].apply(lambda x: x.strftime('%Y-%m-%d'))           #Volvemos a dejar el campo DATE como string
     df_comment_filtered['Unnamed: 0']=df_comment_filtered['Unnamed: 0']+ID_MAX+1
     print("El número de comentarios a ingresar es:",len(df_comment_filtered))
 
     return df_comment_filtered
 
 def reengineer_price(BBDD, df_price):
-    """Reindenxación de los ID del dataframe de PRICES aumentandolo en relación con el valor máximo que había en la Base de Datos.
-    Input:
-    - BBDD (str): Base de datos utilizada.
-    - df_price (Dataframe): Dataframe con los precios originales
+    '''
+    Función para reindexar los ID del dataframe de PRICES aumentándolo en relación con el valor máximo que había en la Base de Datos.
 
-    Return:
-    - df (Dataframe): Dataframe con los ID aumentados.
-    """
+    - Inputs:
+        - BBDD (str):                   Base de datos utilizada.
+        - df_price (Dataframe):         Dataframe con los precios originales.
 
-    # print("Iniciando la conversión de fecha y la reducción de datos de comentarios")
+    - Outputs:
+        - df (Dataframe):               Dataframe con los nuevo ID generados.
+    '''
 
     ''' Conectamos con la base de datos, extraemos la fecha más reciente y la cerramos'''
     from Utils.functions import sql_query
- 
     
     conn = sqlite3.connect(BBDD)
     cursor = conn.cursor()
@@ -593,22 +612,20 @@ def reengineer_price(BBDD, df_price):
     return df_price
 
 def mapeo_productos(BBDD, df_product):
-    """Función para la conversión de los ID de productos
+    '''
+    Función para la conversión de los ID de productos.
 
-   Input:
-      - BBDD (str): nombre de la BBDD.
+    - Inputs:
+        - BBDD (str):                   Nombre de la BBDD utilizada.
+        - df_product (Dataframe):       Dataframe donde se encuentran los productos.
 
-      - df_product (dataframe): Dataframe donde se encuentran los productos
-
-   Output:
-      - map_product (Dict): Diccionario con los ID mapeados coincidentes.
-       
-      - map_product_out (Dict): Diccionario con los ID mapeados no coincidentes.
-    """
+    - Outputs:
+        - map_product (Dict):           Diccionario con los ID mapeados coincidentes.
+        - map_product_out (Dict):       Diccionario con los ID mapeados no coincidentes.
+    '''
     from Utils.functions import sql_query
 
     print("Vamos a reindexar los productos")
-
 
     '''Llamando a la base de datos para extraer información'''
     conn = sqlite3.connect(BBDD)
@@ -640,17 +657,16 @@ def mapeo_productos(BBDD, df_product):
     return map_product, map_product_out
 
 def mapeo_usuarios(BBDD, df_user):
-   '''Función para la conversión de los ID de productos
+   '''
+   Función para la conversión de los ID de usuarios.
 
-   Input:
-      - BBDD (str): nombre de la BBDD.
+   - Inputs:
+      - BBDD (str):                 Nombre de la BBDD utilizada.
+      - df_user (Dataframe):        Dataframe donde se encuentran los usuarios.
 
-      - df_user (dataframe): Dataframe donde se encuentran los productos
-
-   Output:
-      - map_user (Dict): Diccionario con los ID mapeados coincidentes.
-       
-      - map_user_out (Dict): Diccionario con los ID mapeados no coincidentes.
+   - Outputs:
+      - map_user (Dict):            Diccionario con los ID mapeados coincidentes.
+      - map_user_out (Dict):        Diccionario con los ID mapeados no coincidentes.
    '''
 
    print("Vamos a reindexar los usuarios")
@@ -687,20 +703,21 @@ def mapeo_usuarios(BBDD, df_user):
    return map_user, map_user_out
 
 
-def reindex (BBDD,FIELD,df, join_left,join_right,how,ID):              # Vamos a probar con outer
+def reindex (BBDD,FIELD,df, join_left,join_right,how,ID):              
     '''
     Función para reducir el numero de registros del dataframe product o users.
 
-    Input:
-    - BBDD (str): Dirección de la base de datos.
-    - FIELD (str): Nombre de la tabla de la base de datos.
-    - df (pd.DataFrame): DataFrame con registros a reducir.
-    - join_left (str): Nombre de la columna de dataframe_BBDD donde hacer join.
-    - join_right (str): Nombre de la columna de df donde hacer join.
-    - how (str): Tipo de join.
+    - Inputs:
+        - BBDD (str):               Nombre de la BBDD utilizada.
+        - FIELD (str):              Nombre de la tabla de la base de datos.
+        - df (DataFrame):           DataFrame con registros a reducir.
+        - join_left (str):          Nombre de la columna de dataframe_BBDD donde hacer join.
+        - join_right (str):         Nombre de la columna de df donde hacer join.
+        - how (str):                Tipo de join.
+        - ID (str):                 Campo donde existen datos nulos en la BBDD.
 
-    Return:
-    - df_new (pd.DataFrame): DataFrame con registros reindexados y reducidos.
+    - Outputs:
+        - df_new (DataFrame):       DataFrame con registros reindexados y reducidos.
     '''
 
     from Utils.functions import sql_query
@@ -725,13 +742,14 @@ def reindex (BBDD,FIELD,df, join_left,join_right,how,ID):              # Vamos a
 def ingesta_datos (df,BBDD,TABLE):
     '''
     Función para la incorporación de los nuevos datos en una base de datos.
-    Es una formula general que es independiente del numero de campos que tenga la BBDD.
-    Input:
-    - df (pd.DataFrame): DataFrame con registros a incluir.
-    - BBDD (str): path y nombre completo de la Base de Datos.
-    - TABLE (str): Nombre de la TABLA dentro de la Base de Datos.
+
+    Es una formula general que es independiente del número de campos que tenga la BBDD.
+
+    - Inputs:
+        - df (DataFrame):       DataFrame con registros a incluir.
+        - BBDD (str):           Path y nombre completo de la Base de Datos.
+        - TABLE (str):          Nombre de la TABLA dentro de la Base de Datos.
     '''
-    # from Utils.functions import sql_query
 
     conn = sqlite3.connect(BBDD)
     cursor = conn.cursor()
@@ -743,7 +761,7 @@ def ingesta_datos (df,BBDD,TABLE):
     lista_valores=df.values.tolist()
     cursor.executemany(f"INSERT INTO {TABLE} VALUES ({columnas_total})",lista_valores)
 
-    print (f"Se han ingresado los datos a la tabla {TABLE}")
+    print (f"Se han cargado los datos a la tabla {TABLE}")
 
     conn.commit()
     cursor.close()
