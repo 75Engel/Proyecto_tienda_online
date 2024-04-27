@@ -536,7 +536,7 @@ def comments_engineer_function (dataframe,dm_mapping,comment_engineer,user_engin
     h=input("Quieres salvar los datos de usuarios y comentarios?").upper()
     if h=="SI":
         df_users.to_csv(user_engineer,header=True,index=False)           # Tengo que generar el path correcto
-        df_comments.to_csv(comment_engineer,header=True,index=False)           # Tengo que generar el path correcto
+        df_comments.to_csv(comment_engineer,header=True,index=True)           # Tengo que generar el path correcto
 
     return df_comments,df_users
 

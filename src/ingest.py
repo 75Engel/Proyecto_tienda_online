@@ -5,9 +5,9 @@ import time
 os.system('cls')
 print(os.getcwd())
 
-# noduplicated_product=pd.read_csv(r'.\src\Data\productos_scrape_240329.csv')
-# noduplicated_comments=pd.read_csv(r'.\src\Data\comentarios_scrape_240329.csv')
-noduplicated_product, noduplicated_comments = spider_amantis(url_secundaria,product_ingest,comment_ingest)
+noduplicated_product=pd.read_csv(r'.\src\Data\productos_scrape_240427.csv')
+noduplicated_comments=pd.read_csv(r'.\src\Data\comentarios_scrape_240427.csv')
+# noduplicated_product, noduplicated_comments = spider_amantis(url_secundaria,product_ingest,comment_ingest)
 print("Vamos a proceder a la creación de los diferentes dataframes necesarios.")
 df_product = product_engineer_function(noduplicated_product,product_engineer)
 df_tag=tag_engineer_function(df_product,nombre_listas,tag_engineer)
@@ -27,6 +27,7 @@ df_product_new=reindex(BBDD,"PRODUCT",df_product,"URL","LISTA_URL","right","ID_"
 df_tag_new=reindex(BBDD,"PRODUCT",df_tag,"URL","LISTA_URL","right","ID_")
 df_tag_new=df_tag_new[campos_tags]
 df_users_new=reindex(BBDD,"USERS",df_users,"USERS","USERS","right","ID")
+# print(df_comments.info())
 df_comment_new=reengineer_comment(BBDD,df_comments)
 
 print("Realizando la indexacion.")
