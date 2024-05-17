@@ -5,9 +5,10 @@ import time
 os.system('cls')
 print(os.getcwd())
 
-noduplicated_product=pd.read_csv(r'.\src\Data\productos_scrape_240427.csv')
-noduplicated_comments=pd.read_csv(r'.\src\Data\comentarios_scrape_240427.csv')
-# noduplicated_product, noduplicated_comments = spider_amantis(url_secundaria,product_ingest,comment_ingest)
+noduplicated_product, noduplicated_comments = spider_amantis(url_secundaria,product_ingest,comment_ingest)
+noduplicated_product=pd.read_csv(product_ingest)
+noduplicated_comments=pd.read_csv(comment_ingest)
+
 print("Vamos a proceder a la creación de los diferentes dataframes necesarios.")
 df_product = product_engineer_function(noduplicated_product,product_engineer)
 df_tag=tag_engineer_function(df_product,nombre_listas,tag_engineer)
