@@ -21,7 +21,9 @@ file_tag=r'\tags'
 file_ingest_product=file_product+scrape
 file_ingest_comment=file_comment+scrape
 path=r'\Javier\Repositorios\Proyecto_tienda_online'
+path_dashboard=r'src\Data\Dashboard'
 new_path=os.chdir(os.getcwd()+path)
+
 
 product_ingest=folder_ingest+file_ingest_product+'_'+date+ext
 comment_ingest=folder_ingest+file_ingest_comment+'_'+date+ext
@@ -52,3 +54,4 @@ dm_mapping={
     'noviembre':11, 
     'diciembre':12,
 } 
+
