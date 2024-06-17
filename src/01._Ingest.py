@@ -18,6 +18,7 @@ print("Ya hemos creado los dataframes necesarios para su carga en la Base de Dat
 
 time.sleep(5)
 os.system('cls')
+
 print("Gestionando su ingesta en la Base de Datos.\n Primero vamos a proceder a reindexar los dataframes.\nGenerando el mapeo necesario.")
 map_product, map_product_out=mapeo_productos(BBDD, df_product)
 map_user, map_user_out=mapeo_usuarios(BBDD, df_users)
@@ -28,7 +29,6 @@ df_product_new=reindex(BBDD,"PRODUCT",df_product,"URL","LISTA_URL","right","ID_"
 df_tag_new=reindex(BBDD,"PRODUCT",df_tag,"URL","LISTA_URL","right","ID_")
 df_tag_new=df_tag_new[campos_tags]
 df_users_new=reindex(BBDD,"USERS",df_users,"USERS","USERS","right","ID")
-# print(df_comments.info())
 df_comment_new=reengineer_comment(BBDD,df_comments)
 
 print("Realizando la indexacion.")

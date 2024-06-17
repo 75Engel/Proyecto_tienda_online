@@ -600,6 +600,7 @@ def reengineer_price(BBDD, df_price):
     conn = sqlite3.connect(BBDD)
     cursor = conn.cursor()
     query='''SELECT MAX(ID) FROM PRICES'''
+
     MAX_ID=sql_query(query,cursor)
     conn.commit()
     cursor.close()
