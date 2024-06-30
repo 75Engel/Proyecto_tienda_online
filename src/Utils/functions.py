@@ -247,7 +247,7 @@ def spider_amantis(url,product_ingest,comment_ingest):
             response = requests.get(url)
             soup = bs(response.text, 'lxml')
             productos = soup.find_all(class_='caption')
-            for producto in productos[9:]:
+            for producto in productos[8:]:
                 URL_producto = producto.find('a')['href']
                 lista_URLs.append(URL_producto)
             
@@ -256,7 +256,7 @@ def spider_amantis(url,product_ingest,comment_ingest):
             response = requests.get(URL)
             soup = bs(response.text, 'lxml')
             productos = soup.find_all(class_='caption')
-            for producto in productos[9:]:
+            for producto in productos[8:]:
                 URL_producto = producto.find('a')['href']
                 lista_URLs.append(URL_producto)
     print("Terminando de recoger los datos de los links de las paginas\nEmpezando a generar las listas de los productos")
@@ -276,9 +276,10 @@ def spider_amantis(url,product_ingest,comment_ingest):
         comments_product=[]
         rating=[]
 
-        titulos=soup_product.find_all("h1",class_="h3")
+        titulos=soup_product.find_all("div", class_="row pt-3")
         for titulo in titulos:
-            nombre=titulo.get_text(strip=True)
+            splitter=titulo.get_text(strip=True).split('> ')[1]
+            nombre=re.split(r'[,:-]\s*',splitter)[0]
             name.append(nombre)
 
         all_price = soup_product.find_all("div", class_="productoPrecio pull-right tdd_precio")                        
